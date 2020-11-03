@@ -1,35 +1,83 @@
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nov-c1
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-spring-boot
+  name: jenkins
+  namespace: nov-c1
 spec:
   replicas: 1 # 1 PODs at any given point of time
   selector:
     matchLabels:
-      app: sample-spring-boot
+      app: nov-c1
   template:
     metadata:
+      namespace: nov-c1
       labels:
-        app: sample-spring-boot
+        app: nov-c1
     spec:
       containers:
-        - name: springboot-sample
-          image: <your-registry>/<your-image>:<your-tag># Docker container with our node app
+        - name: jenkins
+          image: malokingi/i_c1jen:latest
           ports:
             - containerPort: 8080
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/run/docker.sock
+              name: docker-socket
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot
+  namespace: nov-c1
+spec:
+  replicas: 3 # 3 PODs at any given point of time
+  selector:
+    matchLabels:
+      app: nov-c1
+  template:
+    metadata:
+      namespace: nov-c1
+      labels:
+        app: nov-c1
+    spec:
+      containers:
+        - name: springboot
+          image: malokingi/i_springboot:latest
+          ports:
+            - containerPort: 5432
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/run/docker.sock
+              name: docker-socket
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+      restartPolicy: Always
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: sample-spring-boot-service
+  name: nov-c1-service
+  namespace: nov-c1
   labels:
-    name: sample-spring-boot
+    name: nov-c1
 spec:
   ports:
     - port: 8080 # The service will publish the application on the default http port(80)
       targetPort: 8080
       protocol: TCP
   selector:
-    app: sample-spring-boot
+    app: nov-c1
   type: LoadBalancer # Type loadbalancer will use the underlying cloud provider to create an external url for accessing the app
