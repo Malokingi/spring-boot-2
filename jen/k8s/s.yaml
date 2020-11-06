@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins
+  namespace: c1jenkins
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: jenkin
+    - port: 50000
+      targetPort: 50000
+      name: jnlp
+  selector:
+    app: jenkins
